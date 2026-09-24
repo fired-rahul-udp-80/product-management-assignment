@@ -1,15 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
 
 export default function ProductSearch({ initialSearch = '', onSearch }) {
   const [searchTerm, setSearchTerm] = useState(initialSearch);
   const debouncedTerm = useDebounce(searchTerm, 400);
 
+ 
+  const onSearchRef = useRef(onSearch);
   useEffect(() => {
-    onSearch(debouncedTerm);
-  }, [debouncedTerm, onSearch]);
+    onSearchRef.current = onSearch;
+  });
+  const isMounted = useRef(false);
+  useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true;
+      return;
+    }
+    onSearchRef.current(debouncedTerm);
+  }, [debouncedTerm]);
 
   return (
     <div className="relative w-full max-w-sm">
