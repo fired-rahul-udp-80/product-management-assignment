@@ -1,1 +1,20 @@
 @import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-app: #f8fafc;
+    --bg-surface: #ffffff;
+    --bg-muted: #f1f5f9;
+    --border-color: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --primary-brand: #0284c7;
+    --primary-brand-hover: #0369a1;
+  }
+
+  body {
+    background-color: var(--bg-app);
+    color: var(--text-primary);
+  }
+}
