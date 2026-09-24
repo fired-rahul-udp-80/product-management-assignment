@@ -56,8 +56,6 @@ const authSlice = createSlice({
         localStorage.removeItem('user');
       }
     },
-
-    // Synchronize Redux auth state with browser localStorage on client mount
     initializeAuth: (state) => {
       if (typeof window !== 'undefined') {
         const storedToken = localStorage.getItem('token');

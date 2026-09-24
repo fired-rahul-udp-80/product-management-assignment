@@ -60,7 +60,34 @@ export default function ProductsPage() {
         const skip = Math.max(0, (page - 1) * limit);
         let data;
 
-        if (search && search.trim()) {
+        if (search && search.trim() && category) {
+ 
+          const catData = await productService.getProductsByCategory(category, { limit: 0 });
+          const q = search.trim().toLowerCase();
+          let filtered = (catData?.products || []).filter(
+            (p) =>
+              p.title?.toLowerCase().includes(q) ||
+              p.description?.toLowerCase().includes(q) ||
+              p.brand?.toLowerCase().includes(q)
+          );
+
+          if (sort) {
+            filtered.sort((a, b) => {
+              const valA = a[sort];
+              const valB = b[sort];
+              if (typeof valA === 'string') {
+                return order === 'desc'
+                  ? valB.localeCompare(valA)
+                  : valA.localeCompare(valB);
+              }
+              return order === 'desc' ? Number(valB) - Number(valA) : Number(valA) - Number(valB);
+            });
+          }
+
+          const total = filtered.length;
+          const paginated = filtered.slice(skip, skip + limit);
+          data = { products: paginated, total };
+        } else if (search && search.trim()) {
           data = await productService.searchProducts({
             q: search.trim(),
             limit,

@@ -39,12 +39,10 @@ export default function LoginPage() {
         toast.success("Login Successful")
         router.push('/products');
       } else {
-        setError('Login failed. Token not returned by server.');
+        toast.error('Login failed. Token not returned by server.');
       }
     } catch (err) {
-      const message =
-        err.response?.data?.message || 'Invalid username or password. Please check your credentials and try again.';
-      setError(message);
+      toast.error(err.response?.data?.message)
     } finally {
       setIsLoading(false);
     }
