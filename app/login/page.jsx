@@ -56,7 +56,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen px-4 bg-slate-950">
+    <div className="flex items-center justify-center min-h-screen px-4 bg-slate-100">
       <div className="w-full max-w-md bg-slate-900 border border-slate-800 p-8 space-y-6">
         
         {/* Card Header */}
