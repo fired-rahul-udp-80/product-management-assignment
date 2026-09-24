@@ -1,6 +1,9 @@
 ﻿'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
+import { productService } from '@/services/productService';
 import ProductSearch from '@/components/products/ProductSearch';
 import CategoryFilter from '@/components/products/CategoryFilter';
 import ProductSort from '@/components/products/ProductSort';
@@ -12,21 +15,126 @@ import LoadingSpinner from '@/components/common/LoadingSpinner';
 import EmptyState from '@/components/common/EmptyState';
 import ErrorAlert from '@/components/common/ErrorAlert';
 import { useProductParams } from '@/hooks/useProductParams';
+import { PiPlus } from 'react-icons/pi';
 
-/**
- * /products — Product Listing page.
- *
- * Layout/navigation is provided by app/products/layout.jsx (DashboardLayout + ProtectedRoute).
- * API integration (fetching real products) will be added in the CRUD step.
- */
 export default function ProductsPage() {
   const { page, limit, search, category, sort, order, updateParams } = useProductParams();
 
-  // Placeholder: products will be loaded via productService in the next CRUD step
-  const products = [];
-  const totalItems = 0;
-  const isLoading = false;
-  const error = null;
+  const [products, setProducts] = useState([]);
+  const [totalItems, setTotalItems] = useState(0);
+  const [categories, setCategories] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Delete modal state
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedDeleteId, setSelectedDeleteId] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Fetch product categories once for the category filter
+  useEffect(() => {
+    let isMounted = true;
+    async function loadCategories() {
+      try {
+        const data = await productService.getCategories();
+        if (isMounted && Array.isArray(data)) {
+          setCategories(data);
+        }
+      } catch (err) {
+        console.error('Failed to load categories:', err);
+      }
+    }
+    loadCategories();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Fetch products whenever search, category, page, limit, sort, or order changes
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadProducts() {
+      try {
+        const skip = Math.max(0, (page - 1) * limit);
+        let data;
+
+        if (search && search.trim()) {
+          data = await productService.searchProducts({
+            q: search.trim(),
+            limit,
+            skip,
+            sortBy: sort || undefined,
+            order: order || 'asc',
+          });
+        } else if (category) {
+          data = await productService.getProductsByCategory(category, {
+            limit,
+            skip,
+            sortBy: sort || undefined,
+            order: order || 'asc',
+          });
+        } else {
+          data = await productService.getProducts({
+            limit,
+            skip,
+            sortBy: sort || undefined,
+            order: order || 'asc',
+          });
+        }
+
+        if (!isCancelled) {
+          setProducts(data?.products || []);
+          setTotalItems(data?.total || 0);
+          setError(null);
+          setIsLoading(false);
+        }
+      } catch (err) {
+        if (!isCancelled) {
+          console.error('Error fetching products:', err);
+          setError(
+            err?.response?.data?.message ||
+            err?.message ||
+            'Failed to load products. Please check your connection and try again.'
+          );
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadProducts();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [page, limit, search, category, sort, order, refreshKey]);
+
+  // Trigger delete modal
+  const handleDeleteClick = (id) => {
+    setSelectedDeleteId(id);
+    setDeleteModalOpen(true);
+  };
+
+  // Perform Delete API Call
+  const handleConfirmDelete = async (id) => {
+    try {
+      setIsDeleting(true);
+      await productService.deleteProduct(id);
+      toast.success(`Product #${id} deleted successfully`);
+
+      // Update local state without requiring full reload
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+      setTotalItems((prev) => Math.max(0, prev - 1));
+      setDeleteModalOpen(false);
+      setSelectedDeleteId(null);
+    } catch (err) {
+      console.error('Failed to delete product:', err);
+      toast.error(err?.response?.data?.message || 'Failed to delete product');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -34,23 +142,21 @@ export default function ProductsPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Products</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Manage your products</p>
+          <p className="text-slate-500 text-sm mt-0.5">Manage and view your product catalog</p>
         </div>
 
         <Link
-          href="/products/new"
+          href="/products/add"
           id="add-product-btn"
           className="inline-flex items-center gap-2 px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold rounded-lg transition shadow-sm"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
+          <PiPlus/>
           Add Product
         </Link>
       </div>
 
       {/* Toolbar: Search, Category Filter, Sorting */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-4 bg-white border border-slate-300">
         <ProductSearch
           initialSearch={search}
           onSearch={(query) => updateParams({ search: query, page: 1 })}
@@ -58,6 +164,7 @@ export default function ProductsPage() {
 
         <div className="flex items-center gap-3">
           <CategoryFilter
+            categories={categories}
             selectedCategory={category}
             onSelectCategory={(cat) => updateParams({ category: cat, page: 1 })}
           />
@@ -74,7 +181,10 @@ export default function ProductsPage() {
         <ErrorAlert
           title="Failed to load products"
           message={error}
-          onRetry={() => {}}
+          onRetry={() => {
+            setIsLoading(true);
+            setRefreshKey((k) => k + 1);
+          }}
         />
       )}
 
@@ -87,7 +197,7 @@ export default function ProductsPage() {
           <div className="hidden md:block">
             <ProductTable
               products={products}
-              onDelete={() => {}}
+              onDelete={handleDeleteClick}
             />
           </div>
 
@@ -95,14 +205,14 @@ export default function ProductsPage() {
           {products.length > 0 && (
             <div className="md:hidden space-y-3">
               {products.map((product) => (
-                <ProductCard key={product.id} product={product} onDelete={() => {}} />
+                <ProductCard key={product.id} product={product} onDelete={handleDeleteClick} />
               ))}
             </div>
           )}
 
           {/* Empty state */}
-          {products.length === 0 && !isLoading && (
-            <EmptyState message="No products found. Add your first product to get started." />
+          {products.length === 0 && (
+            <EmptyState message="No products found. Add your first product or try a different filter." />
           )}
         </>
       )}
@@ -118,8 +228,18 @@ export default function ProductsPage() {
         />
       )}
 
-      {/* Delete confirmation modal — wired in CRUD step */}
-      <DeleteConfirmModal isOpen={false} onClose={() => {}} />
+      {/* Delete confirmation modal */}
+      <DeleteConfirmModal
+        isOpen={deleteModalOpen}
+        productId={selectedDeleteId}
+        onClose={() => {
+          if (!isDeleting) {
+            setDeleteModalOpen(false);
+            setSelectedDeleteId(null);
+          }
+        }}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

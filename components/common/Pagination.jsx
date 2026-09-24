@@ -12,13 +12,13 @@ export default function Pagination({ currentPage, totalItems, pageSize, onPageCh
           onChange={(e) => onPageSizeChange(Number(e.target.value))}
           className="bg-white border border-slate-300 rounded px-2 py-1 text-slate-800 focus:outline-none focus:border-sky-600 focus:ring-1 focus:ring-sky-600"
         >
-          <option value={5}>5</option>
+           
           <option value={10}>10</option>
           <option value={20}>20</option>
           <option value={50}>50</option>
         </select>
         <span className="text-slate-500">
-          Showing page {currentPage} of {totalPages} ({totalItems} items)
+          Showing page {currentPage} - {totalPages} of {totalItems}
         </span>
       </div>
 

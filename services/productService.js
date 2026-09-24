@@ -1,8 +1,4 @@
 import apiClient from '@/lib/axios';
-
-/**
- * Service for handling product API requests with DummyJSON
- */
 export const productService = {
   // Fetch paginated products with optional sort & limit/skip parameters
   getProducts: async ({ limit = 10, skip = 0, sortBy = '', order = 'asc' } = {}) => {
@@ -12,6 +8,7 @@ export const productService = {
       params.order = order;
     }
     const response = await apiClient.get('/products', { params });
+    console.log("product", response)
     return response.data;
   },
 

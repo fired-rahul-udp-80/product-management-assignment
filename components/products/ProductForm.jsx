@@ -11,19 +11,6 @@ const INITIAL_FORM_STATE = {
   stock: '',
   thumbnail: '',
 };
-
-/**
- * Reusable product form for both Add (mode="create") and Edit (mode="edit").
- * API integration is intentionally NOT handled here — the parent page
- * receives form data via onSubmit and calls the appropriate productService method.
- *
- * Props:
- *   mode          — "create" | "edit"
- *   initialData   — product object to pre-populate when editing
- *   onSubmit      — async fn(formData) called on save; parent handles API + navigation
- *   isSubmitting  — boolean to disable form while parent is processing
- *   cancelHref    — path to navigate to on cancel
- */
 export default function ProductForm({
   mode = 'create',
   initialData = null,

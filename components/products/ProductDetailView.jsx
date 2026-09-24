@@ -6,9 +6,9 @@ export default function ProductDetailView({ product, onDelete }) {
   if (!product) return null;
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl shadow-sm max-w-5xl mx-auto overflow-hidden">
+    <div className="bg-white border border-slate-200 max-w-5xl mx-auto overflow-hidden">
       {/* Top bar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-300">
         <div>
           <span className="text-xs font-semibold text-sky-600 uppercase tracking-wider capitalize">
             {product.category}
